@@ -5,48 +5,40 @@ const regd_users = express.Router();
 
 let users = [];
 
-const isValid = (username)=>{ //returns boolean
+const isValid = (username) => {
     // Check if the username already exists in the users array
     let userswithsamename = users.filter((user) => {
         return user.username === username;
     });
     // Return true if username exists (invalid for registration), false if doesn't exist (valid for registration)
-    if (userswithsamename.length > 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return userswithsamename.length > 0;
 }
 
-const authenticatedUser = (username,password)=>{ //returns boolean
+const authenticatedUser = (username, password) => {
     // Check if username and password match the records
-    let validusers = users.filter((user) =< {
+    let validusers = users.filter((user) => {
         return (user.username === username && user.password === password);
     });
     // Return true if credentials are valid, false otherwise
-    if (validusers.length > 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return validusers.length > 0;
 }
 
 // Only registered users can login /// task 7 ///
-regd_users.post("/login", (req,res) => {
+regd_users.post("/login", (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
     // Check if username or password is missing
     if (!username || !password) {
-        return res,status(404).json({ message: "Error logging in" })        
+        return res.status(404).json({ message: "Error logging in" });
     }
 
     // Authenticate user
     if (authenticatedUser(username, password)) {
         // Generate JWT access token
-        let accessToken = jwt.sign ({
+        let accessToken = jwt.sign({
             data: password
-        }, 'access', { expiresIn: 60 *60 });
+        }, 'access', { expiresIn: 60 * 60 });
 
         // Store access token and username in session
         req.session.authorization = {
@@ -54,7 +46,7 @@ regd_users.post("/login", (req,res) => {
         }
         return res.status(200).send("User successfully logged in");
     } else {
-        return res.status(208).json({ message: "Invalid Login. Check username and password" })
+        return res.status(208).json({ message: "Invalid Login. Check username and password" });
     }
 });
 
@@ -64,21 +56,21 @@ const authenticateToken = (req, res, next) => {
     let jwtToken;
 
     if (authorizationHeader) {
-        jwsToken = authorizationHeader['accessToken'];
+        jwtToken = authorizationHeader['accessToken'];
     }
 
     if (jwtToken) {
         jwt.verify(jwtToken, "access", (err, user) => {
             if (!err) {
                 req.user = user;
-                req.session.username = authorizationHeader['username']
+                req.session.username = authorizationHeader['username'];
                 next();
             } else {
                 return res.status(403).json({ message: "User not authenticated" });
             }
         });
     } else {
-        return res.status(403).json({ message: "User not logged in" })
+        return res.status(403).json({ message: "User not logged in" });
     }
 };
 
@@ -89,7 +81,7 @@ regd_users.put("/auth/review/:isbn", authenticateToken, (req, res) => {
     const username = req.session.username;
 
     // Check if book exists
-    if (!book[isbn]) {
+    if (!books[isbn]) {
         return res.status(404).json({ message: "Book not found" });
     }
 
@@ -99,7 +91,7 @@ regd_users.put("/auth/review/:isbn", authenticateToken, (req, res) => {
     }
 
     //Add or update the review
-    if(!books[isbn].reviews) {
+    if (!books[isbn].reviews) {
         books[isbn].reviews = {};
     }
 
@@ -123,7 +115,7 @@ regd_users.delete("/auth/review/:isbn", authenticateToken, (req, res) => {
 
     // Check if the book has reviews
     if (!books[isbn].reviews) {
-        return res.status(404).json({ message: "No reviews found for thid book" })
+        return res.status(404).json({ message: "No reviews found for this book" });
     }
 
     // Check if the user has a review for this book
